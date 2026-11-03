@@ -27,6 +27,19 @@ async function getAll(path, params, token) {
   return out;
 }
 
+// 살아있음 표시: 숨김탭 _오류채움_log 의 K1:K2 에 마지막 실행 시각(KST)·오류줄 수 — 멈췄는지 시트에서 바로 확인
+async function heartbeat(n) {
+  if (DRY) return;
+  const ss = SHEETS[0];
+  const m = (await sh.spreadsheets.get({ spreadsheetId: ss, fields: 'sheets.properties.title' })).data.sheets.map((s) => s.properties.title);
+  if (!m.includes(LOG_TAB)) {
+    await sh.spreadsheets.batchUpdate({ spreadsheetId: ss, requestBody: { requests: [{ addSheet: { properties: { title: LOG_TAB, hidden: true } } }] } });
+    await sh.spreadsheets.values.update({ spreadsheetId: ss, range: , valueInputOption: 'RAW', requestBody: { values: [['채운 시각(UTC)', '시트', '탭', '행', '연락처', 'id', 'ad_name', 'campaign_name', '채운 칸']] } });
+  }
+  const kst = new Date(Date.now() + 9 * 3600e3).toISOString().replace('T', ' ').slice(0, 16);
+  await sh.spreadsheets.values.update({ spreadsheetId: ss, range: , valueInputOption: 'RAW', requestBody: { values: [['마지막 실행(KST)', kst], ['그때 오류줄', n]] } });
+}
+
 async function findBadRows(simulateGood) {
   const out = [];
   for (const ssId of SHEETS) {
@@ -94,6 +107,7 @@ function pickLead(list, b) {
   }
   const bad = await findBadRows(false);
   console.log('오류줄', bad.length);
+  await heartbeat(bad.length);
   if (!bad.length) return;
   const leads = await getLeads(3, false);
   if (bad.some((b) => !pickLead(leads[b.phone], b))) { // 최근 3일 켜진 광고에서 못 찾으면 30일·전체 광고로 넓게
