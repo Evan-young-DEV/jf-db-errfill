@@ -11,20 +11,14 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm install --no-audit --no-fund
-      - run: node errfill.js
-        env:
-          SHEETS: ${{ secrets.SHEETS }}
-          META: ${{ secrets.META }}
-          GSA: ${{ secrets.GSA }}
       - name: keepalive
-        if: github.event_name == 'schedule'
         run: |
           d=$(date -u +%Y-%m)
           if [ "$(cat .keepalive 2>/dev/null)" != "$d" ]; then
@@ -33,5 +27,12 @@ jobs:
             git config user.email bot@users.noreply.github.com
             git add .keepalive
             git commit -m "keepalive $d"
-            git push
+            git push || true
           fi
+      - run: node errfill.js
+        env:
+          SHEETS: ${{ secrets.SHEETS }}
+          META: ${{ secrets.META }}
+          GSA: ${{ secrets.GSA }}
+          LOOP_MIN: '55'
+          EVERY_SEC: '120'

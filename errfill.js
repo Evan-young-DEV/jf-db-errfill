@@ -95,7 +95,7 @@ function pickLead(list, b) {
   return list.length === 1 ? list[0] : null;
 }
 
-(async () => {
+async function once() {
   // --test: 정상 줄을 오류줄로 가정하고 맞게 찾는지 검증(쓰기 없음)
   if (process.argv.includes('--test')) {
     const rows = (await findBadRows(true)).filter((b) => !b.isBad && String(b.rowVals[1] || '') >= new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10));
@@ -137,4 +137,15 @@ function pickLead(list, b) {
     await sh.spreadsheets.values.append({ spreadsheetId: ss, range: `'${LOG_TAB}'!A1`, valueInputOption: 'RAW', requestBody: { values: logs } });
   }
   console.log('채운 줄', logs.length, '/ 못 찾은 줄', bad.length - logs.length);
-})().catch((e) => { console.log('ERR', e.message); process.exit(1); });
+}
+
+// 한 번 실행 = 55분 동안 2분마다 반복 (GitHub 예약 실행 지연과 상관없이 끊김 없이 확인). --once 면 1회만
+const LOOP_MIN = Number(process.env.LOOP_MIN || 55), EVERY_SEC = Number(process.env.EVERY_SEC || 120);
+(async () => {
+  const end = Date.now() + LOOP_MIN * 60e3;
+  for (;;) {
+    try { await once(); } catch (e) { console.log('ERR', e.message); }
+    if (process.argv.includes('--once') || process.argv.includes('--test') || Date.now() + EVERY_SEC * 1e3 > end) break;
+    await new Promise((r) => setTimeout(r, EVERY_SEC * 1e3));
+  }
+})();
