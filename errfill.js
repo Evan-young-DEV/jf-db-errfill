@@ -34,10 +34,10 @@ async function heartbeat(n) {
   const m = (await sh.spreadsheets.get({ spreadsheetId: ss, fields: 'sheets.properties.title' })).data.sheets.map((s) => s.properties.title);
   if (!m.includes(LOG_TAB)) {
     await sh.spreadsheets.batchUpdate({ spreadsheetId: ss, requestBody: { requests: [{ addSheet: { properties: { title: LOG_TAB, hidden: true } } }] } });
-    await sh.spreadsheets.values.update({ spreadsheetId: ss, range: , valueInputOption: 'RAW', requestBody: { values: [['채운 시각(UTC)', '시트', '탭', '행', '연락처', 'id', 'ad_name', 'campaign_name', '채운 칸']] } });
+    await sh.spreadsheets.values.update({ spreadsheetId: ss, range: `'${LOG_TAB}'!A1`, valueInputOption: 'RAW', requestBody: { values: [['채운 시각(UTC)', '시트', '탭', '행', '연락처', 'id', 'ad_name', 'campaign_name', '채운 칸']] } });
   }
   const kst = new Date(Date.now() + 9 * 3600e3).toISOString().replace('T', ' ').slice(0, 16);
-  await sh.spreadsheets.values.update({ spreadsheetId: ss, range: , valueInputOption: 'RAW', requestBody: { values: [['마지막 실행(KST)', kst], ['그때 오류줄', n]] } });
+  await sh.spreadsheets.values.update({ spreadsheetId: ss, range: `'${LOG_TAB}'!K1:L2`, valueInputOption: 'RAW', requestBody: { values: [['마지막 실행(KST)', kst], ['그때 오류줄', n]] } });
 }
 
 async function findBadRows(simulateGood) {
