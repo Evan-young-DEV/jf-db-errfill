@@ -8,6 +8,7 @@ concurrency:
   cancel-in-progress: false
 permissions:
   contents: write
+  actions: write
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -36,3 +37,9 @@ jobs:
           GSA: ${{ secrets.GSA }}
           LOOP_MIN: '55'
           EVERY_SEC: '120'
+      # 끝나면 바로 다음 실행 시작 (GitHub 예약 지연으로 끊기지 않게). 예약은 체인이 끊겼을 때 복구용
+      - name: next run
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run errfill.yml -R "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
