@@ -50,11 +50,14 @@ async function findBadRows(simulateGood) {
     vr.forEach((r, i) => {
       const v = r.values || []; if (v.length < 2) return;
       const header = v[0].map((h) => String(h).trim()), tab = tabs[i];
-      const pi = header.indexOf('phone_number'), ai = header.indexOf('ad_name'), ti = header.indexOf('created_time'), fi = header.indexOf('form_id'), ci = header.indexOf('campaign_name');
-      if (pi < 0 || ai < 0 || ti < 0) return;
+      const ai = header.indexOf('ad_name'), ti = header.indexOf('created_time'), fi = header.indexOf('form_id'), ci = header.indexOf('campaign_name');
+      const phoneCols = ['phone_number', 'phone'].map((h) => header.indexOf(h)).filter((k) => k >= 0); // 탭마다 연락처 칸 이름이 다름, 둘 다 있는 탭도 있음
+      if (!phoneCols.length || ai < 0 || ti < 0) return;
       let offset = null; for (let k = v.length - 1; k > 0 && !offset; k--) { const m = String(v[k][ti] || '').match(/([+-]\d{2}:\d{2})$/); if (m) offset = m[1]; }
       v.slice(1).forEach((x, k) => {
-        const p = phone10(x[pi]); if (!p) return;
+        const pi = phoneCols.find((c) => phone10(x[c]));
+        if (pi === undefined) return;
+        const p = phone10(x[pi]);
         const a = String(x[0] || '').trim();
         const isBad = !a || !/^l:\d+$/.test(a) || !String(x[ai] || '').trim();
         if (!isBad && !simulateGood) return;
